@@ -24,6 +24,7 @@ interface Station {
   location: string;
   lat: number;
   lng: number;
+  official_hours?: string;
   status_92: FuelStatus;
   status_95: FuelStatus;
   status_auto_diesel: FuelStatus;
@@ -46,6 +47,48 @@ function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon
     Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c; // Distance in km
+}
+
+// Operating Hours parsing logic
+function getStationOperatingStatus(hoursString?: string): { isOpen: boolean | null; text: string } {
+  if (!hoursString || hoursString === "Unknown") return { isOpen: null, text: "Hours Unknown" };
+  if (hoursString.toLowerCase() === "24 hours") return { isOpen: true, text: "OPEN NOW (24 Hours)" };
+
+  // Matches "06:00 AM - 10:00 PM"
+  const match = hoursString.match(/(\d{1,2}):(\d{2})\s*(AM|PM)\s*-\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (!match) return { isOpen: null, text: "Hours Unknown" };
+
+  let [ , startH, startM, startP, endH, endM, endP ] = match;
+  
+  const parseTime = (h: string, m: string, p: string) => {
+    let hour = parseInt(h, 10);
+    if (p.toUpperCase() === 'PM' && hour < 12) hour += 12;
+    if (p.toUpperCase() === 'AM' && hour === 12) hour = 0;
+    return hour * 60 + parseInt(m, 10);
+  };
+
+  const startTimeMs = parseTime(startH, startM, startP);
+  const endTimeMs = parseTime(endH, endM, endP);
+
+  // Get current time in Sri Lanka (+05:30)
+  const now = new Date();
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const slTime = new Date(utc + (3600000 * 5.5));
+  const currentTimeMs = slTime.getHours() * 60 + slTime.getMinutes();
+
+  let isOpen = false;
+  if (endTimeMs < startTimeMs) {
+    // Operates past midnight (e.g. 10 PM to 6 AM)
+    isOpen = currentTimeMs >= startTimeMs || currentTimeMs <= endTimeMs;
+  } else {
+    isOpen = currentTimeMs >= startTimeMs && currentTimeMs <= endTimeMs;
+  }
+
+  if (isOpen) {
+    return { isOpen: true, text: `OPEN NOW (Until ${endH} ${endP.toUpperCase()})` };
+  } else {
+    return { isOpen: false, text: `CLOSED (Opens at ${startH} ${startP.toUpperCase()})` };
+  }
 }
 
 export default function Home() {
@@ -297,16 +340,37 @@ export default function Home() {
                   { key: "super_diesel", label: "Super Diesel", status: getDisplayStatus(station.status_super_diesel, station.last_updated) },
                   { key: "kerosene", label: "Kerosene", status: getDisplayStatus(station.status_kerosene, station.last_updated) },
                 ];
+                
+                const opStatus = getStationOperatingStatus(station.official_hours);
                                 
                 return (
                   <div key={station.id} className="bg-white rounded-[24px] p-5 shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-slate-100 hover:border-slate-200 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300">
                     <div className="flex justify-between items-start mb-1">
-                      <h4 className="font-extrabold text-[16px] text-slate-900 tracking-tight leading-tight pr-4">{station.name}</h4>
+                      <div>
+                        <h4 className="font-extrabold text-[16px] text-slate-900 tracking-tight leading-tight pr-4">{station.name}</h4>
+                        <div className="mt-1 flex items-center gap-1.5">
+                          {opStatus.isOpen === true && (
+                            <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 uppercase tracking-wider bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> {opStatus.text}
+                            </span>
+                          )}
+                          {opStatus.isOpen === false && (
+                            <span className="flex items-center gap-1 text-[10px] font-bold text-rose-600 uppercase tracking-wider bg-rose-50 px-2 py-0.5 rounded-md border border-rose-100">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span> {opStatus.text}
+                            </span>
+                          )}
+                          {opStatus.isOpen === null && (
+                            <span className="flex items-center gap-1 text-[10px] font-bold text-slate-500 uppercase tracking-wider bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span> {opStatus.text}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                       <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full whitespace-nowrap shrink-0">
                         {station.distanceKm.toFixed(1)} km
                       </span>
                     </div>
-                    <p className="text-[13px] text-slate-500 font-medium mb-4 truncate leading-relaxed">{station.address}</p>
+                    <p className="text-[13px] text-slate-500 font-medium mb-4 truncate leading-relaxed mt-1.5">{station.address}</p>
                     
                     <div className="grid grid-cols-2 gap-2 mt-4">
                       {fuels.map((fuel) => (
