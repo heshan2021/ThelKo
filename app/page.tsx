@@ -513,23 +513,15 @@ export default function Home() {
         <div className="absolute top-auto bottom-0 left-0 right-0 md:top-6 md:left-6 md:bottom-auto md:w-[380px] max-h-[60vh] md:max-h-[calc(100vh-3rem)] flex flex-col gap-0 rounded-t-[32px] md:rounded-[32px] bg-white/80 backdrop-blur-2xl shadow-[0_-8px_40px_rgb(0,0,0,0.08)] md:shadow-[0_8px_40px_rgb(0,0,0,0.08)] border border-white overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] z-[1000]">
           
           <div className="p-6 pb-4 relative z-10 shrink-0">
-            {/* Mobile Drag Handle - Tappable Area */}
+            {/* Mobile Drag Handle & Toggle */}
             <div 
-              className="md:hidden py-3 -mt-3 mb-3 cursor-pointer flex justify-center"
+              className="md:hidden py-2 -mt-2 mb-5 cursor-pointer flex justify-center"
               onClick={() => setIsMobilePanelExpanded(!isMobilePanelExpanded)}
             >
-              <div className="w-12 h-1.5 bg-slate-200 rounded-full" />
-            </div>
-            
-            <h2 
-              className="text-2xl font-bold tracking-tight text-slate-900 mb-4 md:hidden flex justify-between items-center cursor-pointer"
-              onClick={() => setIsMobilePanelExpanded(!isMobilePanelExpanded)}
-            >
-              Thel Thiyenawada
-              <div className="bg-slate-100 p-2 rounded-full cursor-pointer hover:bg-slate-200 transition-colors">
-                 {isMobilePanelExpanded ? <ChevronDown className="h-4 w-4 text-slate-500" /> : <ChevronUp className="h-4 w-4 text-slate-500" />}
+              <div className="bg-slate-100 p-1.5 rounded-full text-slate-500 hover:bg-slate-200 transition-colors active:scale-95 shadow-sm">
+                 {isMobilePanelExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronUp className="h-5 w-5" />}
               </div>
-            </h2>
+            </div>
 
             <div className="relative group">
               <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none transition-transform group-focus-within:scale-110">
