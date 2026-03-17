@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { v4 as uuidv4 } from "uuid";
 import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabase";
@@ -13,7 +13,9 @@ const Marker = dynamic(() => import("react-leaflet").then(m => m.Marker), { ssr:
 const Popup = dynamic(() => import("react-leaflet").then(m => m.Popup), { ssr: false });
 const Tooltip = dynamic(() => import("react-leaflet").then(m => m.Tooltip), { ssr: false });
 const ZoomControl = dynamic(() => import("react-leaflet").then(m => m.ZoomControl), { ssr: false });
+import { useMap } from "react-leaflet";
 const MapUpdater = dynamic(() => import("./components/MapUpdater"), { ssr: false });
+import Supercluster from "supercluster";
 
 type FuelStatus = "Available" | "Empty" | "Unknown" | "Likely Available" | "Confirmed Available" | "Not Sure";
 
@@ -90,6 +92,168 @@ function getStationOperatingStatus(hoursString?: string): { isOpen: boolean | nu
   } else {
     return { isOpen: false, text: `CLOSED (Opens at ${startH} ${startP.toUpperCase()})` };
   }
+}
+
+function ClusterMap({ stations, getDisplayStatus, setSelectedFuel }: any) {
+  const [bounds, setBounds] = useState<any>(null);
+  const [zoom, setZoom] = useState(8);
+  const map = useMap();
+
+  function updateMap() {
+    const b = map.getBounds();
+    setBounds([
+      b.getSouthWest().lng,
+      b.getSouthWest().lat,
+      b.getNorthEast().lng,
+      b.getNorthEast().lat
+    ]);
+    setZoom(Math.floor(map.getZoom()));
+  }
+
+  useEffect(() => {
+    if (!map) return;
+    
+    // Initial bounds might take a cycle to be ready natively
+    const initialBounds = map.getBounds();
+    if (initialBounds.isValid()) {
+       updateMap();
+    } else {
+       // Wait for Leaflet to finish mounting the view geometry
+       map.whenReady(updateMap);
+    }
+    
+    map.on("moveend", updateMap);
+    map.on("zoomend", updateMap);
+
+    return () => {
+      map.off("moveend", updateMap);
+      map.off("zoomend", updateMap);
+    };
+  }, [map]);
+
+  const [superclusterInstance, setSuperclusterInstance] = useState<Supercluster<any, any> | null>(null);
+  const [clusters, setClusters] = useState<any[]>([]);
+
+  // Initialize Supercluster Instance when stations change
+  useEffect(() => {
+    const instance = new Supercluster({
+      radius: 120, // Aggressively grab stations into groups for cleaner visual clustering
+      maxZoom: 18 // Stop clustering if the user zooms very close to street level
+    });
+    
+    // Map Station objects into strictly formatted GeoJSON Feature instances
+    const loadedPoints = stations.map((station: Station) => ({
+      type: "Feature",
+      properties: {
+        cluster: false,
+        stationId: station.id,
+        ...station
+      },
+      geometry: {
+        type: "Point",
+        coordinates: [Number(station.lng), Number(station.lat)]
+      }
+    }));
+    
+    instance.load(loadedPoints as any);
+    setSuperclusterInstance(instance);
+  }, [stations]);
+
+  // Compute live visible clusters anytime the map physically moves or the data changes
+  useEffect(() => {
+    if (superclusterInstance && bounds) {
+      const activeClusters = superclusterInstance.getClusters(
+        bounds as [number, number, number, number],
+        zoom
+      );
+      setClusters(activeClusters);
+    }
+  }, [superclusterInstance, bounds, zoom]);
+
+  // If Leaflet hasn't calculated the physics of the viewport yet, don't attempt to cluster (or it will crash SWR or return empty)
+  if (!bounds) return null;
+
+  return (
+    <>
+      {clusters.map((cluster) => {
+        const [longitude, latitude] = cluster.geometry.coordinates;
+        const { cluster: isCluster, point_count: pointCount } = cluster.properties;
+
+        if (isCluster) {
+          const size = pointCount < 10 ? 30 : pointCount < 100 ? 40 : 50;
+          return (
+            <Marker
+              key={`cluster-${cluster.id}`}
+              position={[latitude, longitude]}
+              icon={
+                typeof window !== "undefined" && require("leaflet").divIcon({
+                  html: `<div style="background-color: #2563eb; color: white; width: ${size}px; height: ${size}px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 3px solid white; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);">${pointCount}</div>`,
+                  className: "marker-cluster-custom",
+                  iconSize: [size, size],
+                })
+              }
+              eventHandlers={{
+                click: () => {
+                  if (superclusterInstance) {
+                    const expansionZoom = Math.min(superclusterInstance.getClusterExpansionZoom(cluster.id), 18);
+                    map.setView([latitude, longitude], expansionZoom, { animate: true });
+                  }
+                }
+              }}
+            />
+          );
+        }
+
+        const station = cluster.properties as unknown as Station;
+        const displayStatus92 = getDisplayStatus(station.status_92, station.last_updated);
+        let markerColor = "grey";
+        if (displayStatus92 === "Available" || displayStatus92 === "Confirmed Available" || displayStatus92 === "Likely Available") markerColor = "green";
+        if (displayStatus92 === "Empty") markerColor = "red";
+
+        // Since leafletIcon context isn't passed down easily without prop drilling, we construct it inline or use the default
+        const L = typeof window !== "undefined" ? require("leaflet") : null;
+        const icon = L ? new L.Icon({
+          iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${markerColor}.png`,
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+          iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+        }) : undefined;
+
+        return (
+          <Marker 
+            key={`map-${station.id}`} 
+            position={[station.lat, station.lng]} 
+            icon={icon}
+            eventHandlers={{
+              click: () => {
+                if (window.innerWidth < 768) {
+                    setSelectedFuel({ stationId: station.id, stationName: station.name, fuelKey: "92", fuelLabel: "92 Octane" });
+                }
+              }
+            }}
+          >
+            <Tooltip direction="top" offset={[0, -40]} opacity={0.9} className="font-sans font-bold text-[12px] bg-white text-slate-900 border-none shadow-md rounded-lg py-1 px-2">
+              {station.name}
+            </Tooltip>
+            <Popup className="[&_.leaflet-popup-content-wrapper]:rounded-2xl [&_.leaflet-popup-content-wrapper]:shadow-[0_8px_30px_rgb(0,0,0,0.12)] [&_.leaflet-popup-content-wrapper]:border [&_.leaflet-popup-content-wrapper]:border-slate-100 [&_.leaflet-popup-tip]:shadow-none">
+                <div className="w-[220px] p-1 font-sans">
+                  <h3 className="font-extrabold text-[15px] text-slate-900 leading-tight mb-1.5">{station.name}</h3>
+                  <p className="text-[12px] font-medium text-slate-500 mb-2 truncate">{station.address}</p>
+                  <a 
+                    href={`https://www.google.com/maps/search/?api=1&query=${station.lat},${station.lng}${station.google_place_id ? `&query_place_id=${station.google_place_id}` : ''}`}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="mt-3 flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-[13px] font-bold shadow-sm transition-colors"
+                  >
+                    <Navigation className="h-4 w-4" />
+                    Get Directions
+                  </a>
+                </div>
+            </Popup>
+          </Marker>
+        );
+      })}
+    </>
+  );
 }
 
 export default function Home() {
@@ -281,11 +445,13 @@ export default function Home() {
     }
   };
 
-  // Derived State
-  const filteredStations = stations.filter(s => 
-    s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    s.address.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Derived State (Memoized to prevent infinite strict-mode re-renders passed down to Supercluster)
+  const filteredStations = useMemo(() => {
+    return stations.filter(s => 
+      s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      s.address.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [stations, searchQuery]);
 
   // Map sort and limit for closest stations (fallback to generic map center if userLocation denied avoiding crash)
   const referenceLocation = userLocation || SRI_LANKA_CENTER;
@@ -309,7 +475,7 @@ export default function Home() {
     <main className="h-screen w-full flex flex-col font-sans overflow-hidden bg-slate-50 text-slate-900">
       
       {/* Modern Floating Header over Map */}
-      <div className="absolute top-4 left-4 right-4 md:top-6 md:right-6 md:left-auto md:max-w-xs z-[2000] pointer-events-none">
+      <div className="absolute top-4 left-4 right-4 md:top-6 md:right-6 md:left-auto md:max-w-xs z-[2000] pointer-events-none flex flex-col gap-3">
          <div className="bg-white/90 backdrop-blur-xl px-5 py-4 md:px-6 md:py-4 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-white/50 pointer-events-auto flex flex-col gap-2">
             <h1 className="text-xl md:text-xl font-extrabold tracking-tight bg-gradient-to-br from-slate-900 to-slate-600 bg-clip-text text-transparent leading-none">
               Welcome to Thel Ko! ⛽
@@ -322,6 +488,19 @@ export default function Home() {
                 <span className="text-slate-900 font-extrabold">How to help:</span> Waiting in line or just pumped? Tap your station below to <span className="text-emerald-600">Mark Available</span> or <span className="text-rose-600">Mark Empty</span>.
               </p>
             </div>
+         </div>
+
+         <div 
+           onClick={() => setIsMissingDrawerOpen(true)}
+           className="bg-white/95 backdrop-blur-xl px-4 py-3 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-white/50 pointer-events-auto flex items-center gap-3 cursor-pointer hover:bg-blue-50 hover:border-blue-100 hover:shadow-[0_8px_20px_rgb(59,130,246,0.15)] transition-all duration-300 group"
+         >
+           <div className="w-10 h-10 bg-blue-100/80 rounded-full flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+             <MapPinPlus className="h-5 w-5 text-blue-600" />
+           </div>
+           <div>
+             <h4 className="font-extrabold text-[14px] text-slate-900 leading-tight">Shed is missing?</h4>
+             <p className="text-[11px] font-bold text-slate-500 mt-0.5 uppercase tracking-wide">Add it to the map</p>
+           </div>
          </div>
       </div>
 
@@ -546,39 +725,14 @@ export default function Home() {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
             />
             
-            {filteredStations.map((station) => {
-              const displayStatus92 = getDisplayStatus(station.status_92, station.last_updated);
-              let markerColor = "grey";
-              if (displayStatus92 === "Available") markerColor = "green";
-              if (displayStatus92 === "Empty") markerColor = "red";
-
-              const icon = leafletIcon && leafletIcon.default ? leafletIcon.default(markerColor) : undefined;
-
-              return (
-                <Marker key={`map-${station.id}`} position={[station.lat, station.lng]} icon={icon}>
-                  {/* Tooltip to show text directly on the map surface */}
-                  <Tooltip direction="top" offset={[0, -40]} opacity={0.9} className="font-sans font-bold text-[12px] bg-white text-slate-900 border-none shadow-md rounded-lg py-1 px-2">
-                    {station.name}
-                  </Tooltip>
-                  <Popup className="[&_.leaflet-popup-content-wrapper]:rounded-2xl [&_.leaflet-popup-content-wrapper]:shadow-[0_8px_30px_rgb(0,0,0,0.12)] [&_.leaflet-popup-content-wrapper]:border [&_.leaflet-popup-content-wrapper]:border-slate-100 [&_.leaflet-popup-tip]:shadow-none">
-                      <div className="w-[220px] p-1 font-sans">
-                        <h3 className="font-extrabold text-[15px] text-slate-900 leading-tight mb-1.5">{station.name}</h3>
-                        <p className="text-[12px] font-medium text-slate-500 mb-2 truncate">{station.address}</p>
-                        
-                        <a 
-                          href={`https://www.google.com/maps/search/?api=1&query=${station.lat},${station.lng}${station.google_place_id ? `&query_place_id=${station.google_place_id}` : ''}`}
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="mt-3 flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-[13px] font-bold shadow-sm transition-colors"
-                        >
-                          <Navigation className="h-4 w-4" />
-                          Get Directions
-                        </a>
-                      </div>
-                  </Popup>
-                </Marker>
-              );
-            })}
+            {/* Dynamic Map Clustering Sub-Component */}
+            <ClusterMap 
+              stations={filteredStations} 
+              getDisplayStatus={getDisplayStatus} 
+              userLocation={userLocation} 
+              leafletIcon={leafletIcon} 
+              setSelectedFuel={setSelectedFuel} 
+            />
 
             {/* Render User Location Marker if permission granted */}
             {userLocation && (
