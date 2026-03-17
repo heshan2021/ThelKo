@@ -24,6 +24,7 @@ interface Station {
   location: string;
   lat: number;
   lng: number;
+  google_place_id?: string;
   official_hours?: string;
   status_92: FuelStatus;
   status_95: FuelStatus;
@@ -415,9 +416,21 @@ export default function Home() {
                         {station.distanceKm.toFixed(1)} km
                       </span>
                     </div>
-                    <p className="text-[13px] text-slate-500 font-medium mb-4 truncate leading-relaxed mt-1.5">{station.address}</p>
+                    <p className="text-[13px] text-slate-500 font-medium mb-3 truncate leading-relaxed mt-1.5">{station.address}</p>
                     
-                    <div className="grid grid-cols-2 gap-2 mt-4">
+                    <div className="mb-4">
+                        <a 
+                          href={`https://www.google.com/maps/search/?api=1&query=${station.lat},${station.lng}${station.google_place_id ? `&query_place_id=${station.google_place_id}` : ''}`}
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-2 w-full bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200 hover:border-blue-600 py-2 rounded-xl text-[12px] font-bold transition-colors duration-300"
+                        >
+                          <Navigation className="h-3.5 w-3.5" />
+                          Get Directions
+                        </a>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2">
                       {fuels.map((fuel) => {
                         let bgColor = 'bg-slate-50/50 border border-slate-100/50';
                         let textColor = 'text-slate-500';
@@ -461,7 +474,7 @@ export default function Home() {
                              </div>
                           </div>
                           
-                          <div className={`hidden md:flex gap-1.5 transition-opacity duration-300 ${isUnknownOrDisputed ? 'opacity-100 mt-1' : 'opacity-0 group-hover:opacity-100 mt-1'}`}>
+                          <div className={`hidden md:flex gap-1.5 transition-opacity duration-300 mt-1 ${isUnknownOrDisputed ? 'opacity-100' : 'opacity-50 hover:opacity-100 focus-within:opacity-100'}`}>
                             <button 
                               onClick={(e) => { e.stopPropagation(); submitReport(station.id, fuel.key, "Available"); }}
                               disabled={submittingKey !== null}
@@ -548,14 +561,20 @@ export default function Home() {
                     {station.name}
                   </Tooltip>
                   <Popup className="[&_.leaflet-popup-content-wrapper]:rounded-2xl [&_.leaflet-popup-content-wrapper]:shadow-[0_8px_30px_rgb(0,0,0,0.12)] [&_.leaflet-popup-content-wrapper]:border [&_.leaflet-popup-content-wrapper]:border-slate-100 [&_.leaflet-popup-tip]:shadow-none">
-                    <div className="w-[220px] p-1 font-sans">
-                      <h3 className="font-extrabold text-[15px] text-slate-900 leading-tight mb-1.5">{station.name}</h3>
-                      <p className="text-[12px] font-medium text-slate-500 mb-2 truncate">{station.address}</p>
-                      <div className="bg-slate-50 rounded-lg p-2.5 border border-slate-100 flex gap-2 items-center">
-                        <Navigation className="h-4 w-4 text-blue-500 shrink-0" />
-                        <p className="text-[11px] text-slate-600 font-semibold leading-tight">Use the side panel to update status instantly.</p>
+                      <div className="w-[220px] p-1 font-sans">
+                        <h3 className="font-extrabold text-[15px] text-slate-900 leading-tight mb-1.5">{station.name}</h3>
+                        <p className="text-[12px] font-medium text-slate-500 mb-2 truncate">{station.address}</p>
+                        
+                        <a 
+                          href={`https://www.google.com/maps/search/?api=1&query=${station.lat},${station.lng}${station.google_place_id ? `&query_place_id=${station.google_place_id}` : ''}`}
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="mt-3 flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-[13px] font-bold shadow-sm transition-colors"
+                        >
+                          <Navigation className="h-4 w-4" />
+                          Get Directions
+                        </a>
                       </div>
-                    </div>
                   </Popup>
                 </Marker>
               );
