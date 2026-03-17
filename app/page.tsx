@@ -15,7 +15,7 @@ const Tooltip = dynamic(() => import("react-leaflet").then(m => m.Tooltip), { ss
 const ZoomControl = dynamic(() => import("react-leaflet").then(m => m.ZoomControl), { ssr: false });
 const MapUpdater = dynamic(() => import("./components/MapUpdater"), { ssr: false });
 
-type FuelStatus = "Available" | "Empty" | "Unknown";
+type FuelStatus = "Available" | "Empty" | "Unknown" | "Likely Available" | "Confirmed Available" | "Not Sure";
 
 interface Station {
   id: string;
@@ -192,13 +192,17 @@ export default function Home() {
 
   // Time Decay Logic
   const getDisplayStatus = (status: FuelStatus, lastUpdated: string | null | undefined): FuelStatus => {
-    if (!lastUpdated) return status; // If no date provided (due to custom SQL scripts etc), assume fresh
+    // Note: The UI now trusts the database for granular "Likely Available" or "Not Sure" states
+    // but we still want to gracefully downgrade truly old "Confirmed Available" or "Empty" tags 
+    // to "Unknown" if no one has touched them in a very long time (> 12 hours).
+    
+    if (!lastUpdated) return status; 
     
     // Validate if the parsed date is actual invalid format
     const time = new Date(lastUpdated).getTime();
     if (isNaN(time)) return status;
 
-    const decayTime = 2 * 60 * 60 * 1000; // 2 hours in ms
+    const decayTime = 12 * 60 * 60 * 1000; // 12 hours in ms
     if (Date.now() - time > decayTime) {
       return "Unknown";
     }
@@ -208,6 +212,18 @@ export default function Home() {
   // Handle Report Submission
   const submitReport = async (stationId: string, fuelType: string, reportedStatus: "Available" | "Empty") => {
     if (!deviceId) return alert("Device ID not found");
+    
+    // Check LocalStorage Cooldown
+    const cooldownKey = `cooldown_${stationId}_${fuelType}`;
+    const lastVote = localStorage.getItem(cooldownKey);
+    
+    if (lastVote) {
+        const timeSince = Date.now() - parseInt(lastVote);
+        if (timeSince < 30 * 60 * 1000) { // 30 minutes
+            alert("You've already reported this fuel type recently. Please wait before reporting again to prevent spam.");
+            return;
+        }
+    }
     
     // Create a unique key for the button loader state
     const actionKey = `${stationId}-${fuelType}-${reportedStatus}`;
@@ -234,7 +250,9 @@ export default function Home() {
       console.error(error);
       alert("Failed to submit report. Please try again.");
     } else {
-      alert(`Report submitted successfully! \n\nNote: For anti-spam protection, the public map will only update once ${userLocation ? '2' : '3'} distinct users confirm this exact status within 15 minutes.`);
+      // Record successful vote in local storage to prevent immediate spam
+      localStorage.setItem(cooldownKey, Date.now().toString());
+      alert(`Report submitted successfully! \n\nNote: The station status may take a moment to update or require confirmation from other drivers.`);
     }
   };
 
@@ -400,10 +418,32 @@ export default function Home() {
                     <p className="text-[13px] text-slate-500 font-medium mb-4 truncate leading-relaxed mt-1.5">{station.address}</p>
                     
                     <div className="grid grid-cols-2 gap-2 mt-4">
-                      {fuels.map((fuel) => (
+                      {fuels.map((fuel) => {
+                        let bgColor = 'bg-slate-50/50 border border-slate-100/50';
+                        let textColor = 'text-slate-500';
+                        
+                        // Map the complex granular statuses to colors
+                        if (fuel.status === 'Available' || fuel.status === 'Confirmed Available') {
+                            bgColor = 'bg-emerald-50/80 border border-emerald-100/50';
+                            textColor = 'text-emerald-950';
+                        } else if (fuel.status === 'Likely Available') {
+                            bgColor = 'bg-emerald-50/40 border border-emerald-100/30';
+                            textColor = 'text-emerald-800';
+                        } else if (fuel.status === 'Not Sure') {
+                            bgColor = 'bg-orange-50/80 border border-orange-100/50';
+                            textColor = 'text-orange-950';
+                        } else if (fuel.status === 'Empty') {
+                            bgColor = 'bg-rose-50/80 border border-rose-100/50';
+                            textColor = 'text-rose-950';
+                        }
+
+                        // Should the buttons default to visible? Only if the state needs immediate clearing up
+                        const isUnknownOrDisputed = fuel.status === 'Unknown' || fuel.status === 'Not Sure';
+
+                        return (
                         <div 
                           key={fuel.key} 
-                          className={`group p-2.5 rounded-xl transition-colors cursor-pointer md:cursor-default ${fuel.status === 'Available' ? 'bg-emerald-50/80 border border-emerald-100/50' : fuel.status === 'Empty' ? 'bg-rose-50/80 border border-rose-100/50' : 'bg-slate-50/50 border border-slate-100/50'}`}
+                          className={`group p-2.5 rounded-xl transition-colors cursor-pointer md:cursor-default ${bgColor}`}
                           onClick={() => {
                             if (window.innerWidth < 768) {
                               setSelectedFuel({ stationId: station.id, stationName: station.name, fuelKey: fuel.key, fuelLabel: fuel.label });
@@ -411,15 +451,17 @@ export default function Home() {
                           }}
                         >
                           <div className="flex flex-col gap-1.5 mb-2 pointer-events-none md:pointer-events-auto">
-                             <span className={`text-[11px] font-bold uppercase tracking-wider ${fuel.status === 'Available' ? 'text-emerald-950' : fuel.status === 'Empty' ? 'text-rose-950' : 'text-slate-500'}`}>{fuel.label}</span> 
+                             <span className={`text-[11px] font-bold uppercase tracking-wider ${textColor}`}>{fuel.label}</span> 
                              <div className="flex items-center">
-                               {fuel.status === 'Available' && <span className="text-emerald-600 font-black text-[14px] leading-none">Available</span>}
+                               {(fuel.status === 'Available' || fuel.status === 'Confirmed Available') && <span className="text-emerald-600 font-black text-[14px] leading-none">Confirmed</span>}
+                               {fuel.status === 'Likely Available' && <span className="text-emerald-500 font-black text-[14px] leading-none">Likely Available</span>}
                                {fuel.status === 'Empty' && <span className="text-rose-600 font-black text-[14px] leading-none">Empty</span>}
+                               {fuel.status === 'Not Sure' && <span className="text-orange-600 font-black text-[14px] leading-none">Not Sure</span>}
                                {fuel.status === 'Unknown' && <span className="text-slate-400 font-black text-[14px] leading-none">Unknown</span>}
                              </div>
                           </div>
                           
-                          <div className={`hidden md:flex gap-1.5 transition-opacity duration-300 ${fuel.status === 'Unknown' ? 'opacity-100 mt-1' : 'opacity-0 group-hover:opacity-100 mt-1'}`}>
+                          <div className={`hidden md:flex gap-1.5 transition-opacity duration-300 ${isUnknownOrDisputed ? 'opacity-100 mt-1' : 'opacity-0 group-hover:opacity-100 mt-1'}`}>
                             <button 
                               onClick={(e) => { e.stopPropagation(); submitReport(station.id, fuel.key, "Available"); }}
                               disabled={submittingKey !== null}
@@ -436,7 +478,7 @@ export default function Home() {
                             </button>
                           </div>
                         </div>
-                      ))}
+                      )})}
                     </div>
                   </div>
                 );
