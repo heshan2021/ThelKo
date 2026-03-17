@@ -266,7 +266,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [submittingKey, setSubmittingKey] = useState<string | null>(null);
   const [selectedFuel, setSelectedFuel] = useState<{stationId: string, stationName: string, fuelKey: string, fuelLabel: string} | null>(null);
-  const [isMobilePanelExpanded, setIsMobilePanelExpanded] = useState(false);
+  const [isMobilePanelExpanded, setIsMobilePanelExpanded] = useState(true);
   const [isMissingDrawerOpen, setIsMissingDrawerOpen] = useState(false);
   const [missingStationData, setMissingStationData] = useState({ name: "", mapsLink: "" });
   const [isSubmittingMissing, setIsSubmittingMissing] = useState(false);
