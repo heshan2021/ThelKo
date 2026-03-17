@@ -35,7 +35,7 @@ interface Station {
 
 const SRI_LANKA_CENTER = { lat: 7.8731, lng: 80.7718 };
 
-import { Search, Navigation, ChevronUp, ChevronDown } from "lucide-react";
+import { Search, Navigation, ChevronUp, ChevronDown, MapPinPlus, Loader2 } from "lucide-react";
 
 // Haversine distance formula to calculate distance between two coordinates in kilometers
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -102,6 +102,9 @@ export default function Home() {
   const [submittingKey, setSubmittingKey] = useState<string | null>(null);
   const [selectedFuel, setSelectedFuel] = useState<{stationId: string, stationName: string, fuelKey: string, fuelLabel: string} | null>(null);
   const [isMobilePanelExpanded, setIsMobilePanelExpanded] = useState(false);
+  const [isMissingDrawerOpen, setIsMissingDrawerOpen] = useState(false);
+  const [missingStationData, setMissingStationData] = useState({ name: "", mapsLink: "" });
+  const [isSubmittingMissing, setIsSubmittingMissing] = useState(false);
 
   // Initialize leaflet icon setup on client mount
   useEffect(() => {
@@ -232,6 +235,30 @@ export default function Home() {
       alert("Failed to submit report. Please try again.");
     } else {
       alert(`Report submitted successfully! \n\nNote: For anti-spam protection, the public map will only update once ${userLocation ? '2' : '3'} distinct users confirm this exact status within 15 minutes.`);
+    }
+  };
+
+  const handleMissingSubmission = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!missingStationData.name || !missingStationData.mapsLink || !deviceId) return;
+    
+    setIsSubmittingMissing(true);
+    
+    const { error } = await supabase.from('pending_stations').insert({
+      name: missingStationData.name,
+      maps_link: missingStationData.mapsLink,
+      device_id: deviceId
+    });
+
+    setIsSubmittingMissing(false);
+    
+    if (error) {
+      console.error(error);
+      alert("Something went wrong holding onto this data. Please try again.");
+    } else {
+      alert("Thank you! Your submission has been sent for review by the ThelKo team.");
+      setIsMissingDrawerOpen(false);
+      setMissingStationData({ name: "", mapsLink: "" }); // Reset
     }
   };
 
@@ -392,7 +419,7 @@ export default function Home() {
                              </div>
                           </div>
                           
-                          <div className="hidden md:flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className={`hidden md:flex gap-1.5 transition-opacity duration-300 ${fuel.status === 'Unknown' ? 'opacity-100 mt-1' : 'opacity-0 group-hover:opacity-100 mt-1'}`}>
                             <button 
                               onClick={(e) => { e.stopPropagation(); submitReport(station.id, fuel.key, "Available"); }}
                               disabled={submittingKey !== null}
@@ -414,6 +441,18 @@ export default function Home() {
                   </div>
                 );
               })}
+
+              {/* New CTA to add a missing station */}
+              <div 
+                onClick={() => setIsMissingDrawerOpen(true)}
+                className="border-2 border-dashed border-slate-200 rounded-[24px] p-5 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-colors mt-6"
+              >
+                <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <MapPinPlus className="h-5 w-5 text-slate-500" />
+                </div>
+                <h4 className="font-extrabold text-[15px] text-slate-900 mb-1">Shed is missing?</h4>
+                <p className="text-[12px] text-slate-500 font-medium">Help the community by adding it to the map!</p>
+              </div>
             </div>
             
             {nearestStations.length === 0 && (
@@ -532,6 +571,72 @@ export default function Home() {
             >
               Cancel
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Missing Station Submission Drawer */}
+      {isMissingDrawerOpen && (
+        <div 
+          className="fixed inset-0 z-[4000] flex items-end justify-center sm:items-center p-4 bg-slate-900/40 backdrop-blur-sm transition-opacity duration-300"
+          onClick={() => setIsMissingDrawerOpen(false)}
+        >
+          <div 
+            className="bg-white/95 backdrop-blur-xl w-full max-w-md mx-auto rounded-3xl p-6 shadow-2xl border border-white flex flex-col gap-4 animate-in slide-in-from-bottom-8 fade-in duration-300 relative"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-2 md:hidden" />
+            
+            <div className="mb-2 text-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <MapPinPlus className="h-6 w-6 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-extrabold text-slate-900 leading-tight mb-1">Add a New Station</h3>
+              <p className="text-sm font-medium text-slate-500">Know a fuel station that isn't on the map? Send it to us for review.</p>
+            </div>
+            
+            <form onSubmit={handleMissingSubmission} className="flex flex-col gap-4 mt-2">
+              <div>
+                <label className="block text-[11px] font-black uppercase text-slate-500 tracking-widest mb-1.5 ml-1">Station Name</label>
+                <input 
+                  type="text" 
+                  required
+                  placeholder="e.g. CEYPETCO - Kirulapone"
+                  className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                  value={missingStationData.name}
+                  onChange={e => setMissingStationData({...missingStationData, name: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black uppercase text-slate-500 tracking-widest mb-1.5 ml-1">Google Maps Link</label>
+                <input 
+                  type="url" 
+                  required
+                  placeholder="https://maps.google.com/..."
+                  className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-mono"
+                  value={missingStationData.mapsLink}
+                  onChange={e => setMissingStationData({...missingStationData, mapsLink: e.target.value})}
+                />
+              </div>
+
+              <div className="flex gap-3 mt-4">
+                <button 
+                  type="button"
+                  onClick={() => setIsMissingDrawerOpen(false)}
+                  className="flex-1 py-3 text-sm font-bold text-slate-500 uppercase tracking-wide hover:bg-slate-100 rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isSubmittingMissing || !missingStationData.name || !missingStationData.mapsLink}
+                  className="flex-[2] bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white py-3 rounded-xl text-[14px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
+                >
+                  {isSubmittingMissing ? <Loader2 className="w-5 h-5 animate-spin" /> : "Submit Station"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
