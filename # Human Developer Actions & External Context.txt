@@ -1,0 +1,42 @@
+# Human Developer Actions & External Context
+
+## Database (Supabase)
+- Created project in Supabase dashboard.
+- Ran SQL script to create tables: `users`, `stations`, and `reports`.
+- Created custom ENUM `fuel_status` ('Available', 'Empty', 'Unknown').
+- Ran SQL to create RPC function `submit_fuel_report` with geofencing logic.
+- Enabled "Realtime" replication for the `stations` table in the Supabase dashboard.
+
+## Environment Variables
+- Added `NEXT_PUBLIC_SUPABASE_URL` to `.env.local`
+- Added `NEXT_PUBLIC_SUPABASE_ANON_KEY` to `.env.local`
+
+INSERT INTO stations (name, address, lat, lng, status_92, status_95, status_auto_diesel, status_super_diesel, status_kerosene)
+VALUES 
+    -- Colombo 04 (Bambalapitiya) - Showing 92 Available, Diesel Empty
+    ('CEYPETCO - Bambalapitiya', 'Marine Drive, Colombo 04', 6.8850, 79.8540, 'Available', 'Unknown', 'Empty', 'Unknown', 'Unknown'),
+    
+    -- Colombo 07 (Ward Place) - Showing everything Empty (Red Pin)
+    ('LIOC - Ward Place', 'Ward Place, Colombo 07', 6.9150, 79.8690, 'Empty', 'Empty', 'Empty', 'Empty', 'Unknown'),
+    
+    -- Nawala - Showing everything Available (Green Pin)
+    ('Sinopec - Nawala', 'Nawala Road, Rajagiriya', 6.8930, 79.8860, 'Available', 'Available', 'Available', 'Available', 'Unknown'),
+    
+    -- Colombo 01 (Fort) - Mixed statuses
+    ('CEYPETCO - Fort', 'Lotus Road, Colombo 01', 6.9270, 79.8610, 'Empty', 'Available', 'Available', 'Empty', 'Unknown'),
+    
+    -- Wellawatte - Completely Unknown (Grey Pin to test your time decay UI)
+    ('LIOC - Wellawatte', 'Galle Road, Colombo 06', 6.8650, 79.8600, 'Unknown', 'Unknown', 'Unknown', 'Unknown', 'Unknown'),
+    
+    -- Dehiwala - 92 Empty, Diesel Available
+    ('CEYPETCO - Dehiwala', 'Galle Road, Dehiwala', 6.8410, 79.8660, 'Empty', 'Unknown', 'Available', 'Unknown', 'Unknown'),
+    
+    -- Mount Lavinia - Kerosene and 92 Available
+    ('Sinopec - Mount Lavinia', 'Hotel Road, Mount Lavinia', 6.8200, 79.8620, 'Available', 'Empty', 'Empty', 'Unknown', 'Available'),
+    
+    -- Borella - High demand area, everything empty
+    ('CEYPETCO - Borella', 'Baseline Road, Colombo 08', 6.9080, 79.8730, 'Empty', 'Empty', 'Empty', 'Unknown', 'Unknown'); ran this in supabase 
+
+    ran the below in supabase sql editor 
+    ALTER TABLE stations ADD COLUMN official_hours TEXT DEFAULT 'Unknown';
+    
