@@ -94,7 +94,7 @@ function getStationOperatingStatus(hoursString?: string): { isOpen: boolean | nu
   }
 }
 
-function ClusterMap({ stations, getDisplayStatus, setSelectedFuel }: any) {
+function ClusterMap({ stations, getDisplayStatus, setSelectedFuel, setSearchQuery, setIsMobilePanelExpanded }: any) {
   const [bounds, setBounds] = useState<any>(null);
   const [zoom, setZoom] = useState(8);
   const map = useMap();
@@ -226,15 +226,18 @@ function ClusterMap({ stations, getDisplayStatus, setSelectedFuel }: any) {
             eventHandlers={{
               click: () => {
                 if (window.innerWidth < 768) {
-                    setSelectedFuel({ stationId: station.id, stationName: station.name, fuelKey: "92", fuelLabel: "92 Octane" });
+                    // Mobile: Hide popup and immediately open the Bottom Drawer focusing this specific station
+                    setSearchQuery(station.name);
+                    setIsMobilePanelExpanded(true);
                 }
               }
             }}
           >
-            <Tooltip direction="top" offset={[0, -40]} opacity={0.9} className="font-sans font-bold text-[12px] bg-white text-slate-900 border-none shadow-md rounded-lg py-1 px-2">
+            {/* Display tooltips and popups via CSS hiding on mobile to prevent clunky UX */}
+            <Tooltip permanent={false} direction="top" offset={[0, -40]} opacity={0.9} className="max-md:hidden font-sans font-bold text-[12px] bg-white text-slate-900 border-none shadow-md rounded-lg py-1 px-2">
               {station.name}
             </Tooltip>
-            <Popup className="[&_.leaflet-popup-content-wrapper]:rounded-2xl [&_.leaflet-popup-content-wrapper]:shadow-[0_8px_30px_rgb(0,0,0,0.12)] [&_.leaflet-popup-content-wrapper]:border [&_.leaflet-popup-content-wrapper]:border-slate-100 [&_.leaflet-popup-tip]:shadow-none">
+            <Popup className="max-md:hidden [&_.leaflet-popup-content-wrapper]:rounded-2xl [&_.leaflet-popup-content-wrapper]:shadow-[0_8px_30px_rgb(0,0,0,0.12)] [&_.leaflet-popup-content-wrapper]:border [&_.leaflet-popup-content-wrapper]:border-slate-100 [&_.leaflet-popup-tip]:shadow-none">
                 <div className="w-[220px] p-1 font-sans">
                   <h3 className="font-extrabold text-[15px] text-slate-900 leading-tight mb-1.5">{station.name}</h3>
                   <p className="text-[12px] font-medium text-slate-500 mb-2 truncate">{station.address}</p>
@@ -492,14 +495,14 @@ export default function Home() {
 
          <div 
            onClick={() => setIsMissingDrawerOpen(true)}
-           className="bg-white/95 backdrop-blur-xl px-4 py-3 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-white/50 pointer-events-auto flex items-center gap-3 cursor-pointer hover:bg-blue-50 hover:border-blue-100 hover:shadow-[0_8px_20px_rgb(59,130,246,0.15)] transition-all duration-300 group"
+           className="bg-white/95 backdrop-blur-xl px-3 py-2 md:px-4 md:py-3 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-white/50 pointer-events-auto flex items-center gap-2 md:gap-3 cursor-pointer hover:bg-blue-50 hover:border-blue-100 hover:shadow-[0_8px_20px_rgb(59,130,246,0.15)] transition-all duration-300 group active:scale-[0.98]"
          >
-           <div className="w-10 h-10 bg-blue-100/80 rounded-full flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-             <MapPinPlus className="h-5 w-5 text-blue-600" />
+           <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-100/80 rounded-full flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+             <MapPinPlus className="h-4 w-4 md:h-5 md:w-5 text-blue-600" />
            </div>
            <div>
-             <h4 className="font-extrabold text-[14px] text-slate-900 leading-tight">Shed is missing?</h4>
-             <p className="text-[11px] font-bold text-slate-500 mt-0.5 uppercase tracking-wide">Add it to the map</p>
+             <h4 className="font-extrabold text-[12px] md:text-[14px] text-slate-900 leading-tight">Shed is missing?</h4>
+             <p className="text-[9px] md:text-[11px] font-bold text-slate-500 mt-0.5 md:mt-1 uppercase tracking-wider md:tracking-wide">Add it to the map</p>
            </div>
          </div>
       </div>
@@ -507,7 +510,7 @@ export default function Home() {
       <div className="flex-1 relative z-0">
         
         {/* Floating UI Panel (Modern Minimalist) */}
-        <div className="absolute top-auto bottom-0 left-0 right-0 md:top-6 md:left-6 md:bottom-auto md:w-[380px] max-h-[60vh] md:max-h-[calc(100vh-3rem)] flex flex-col gap-0 rounded-t-[32px] md:rounded-[32px] bg-white/80 backdrop-blur-2xl shadow-[0_-8px_40px_rgb(0,0,0,0.08)] md:shadow-[0_8px_40px_rgb(0,0,0,0.08)] border border-white overflow-hidden transition-all duration-500 ease-out z-[1000]">
+        <div className="absolute top-auto bottom-0 left-0 right-0 md:top-6 md:left-6 md:bottom-auto md:w-[380px] max-h-[60vh] md:max-h-[calc(100vh-3rem)] flex flex-col gap-0 rounded-t-[32px] md:rounded-[32px] bg-white/80 backdrop-blur-2xl shadow-[0_-8px_40px_rgb(0,0,0,0.08)] md:shadow-[0_8px_40px_rgb(0,0,0,0.08)] border border-white overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] z-[1000]">
           
           <div className="p-6 pb-4 relative z-10 shrink-0">
             {/* Mobile Drag Handle - Tappable Area */}
@@ -546,7 +549,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className={`overflow-y-auto px-6 pb-8 space-y-4 pt-0 transition-all duration-300 ${!isMobilePanelExpanded ? 'max-md:hidden' : ''}`}>
+          <div className={`overflow-y-auto px-6 pb-[max(2rem,env(safe-area-inset-bottom))] space-y-4 pt-0 transition-all duration-300 ${!isMobilePanelExpanded ? 'max-md:hidden' : ''}`}>
             <div className="flex items-center gap-2 mb-4 sticky top-0 bg-white/80 backdrop-blur-md py-2 z-20 -mx-2 px-2 rounded-xl">
               <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
                 <Navigation className="h-3 w-3 text-slate-600" />
@@ -569,7 +572,7 @@ export default function Home() {
                 const opStatus = getStationOperatingStatus(station.official_hours);
                                 
                 return (
-                  <div key={station.id} className="bg-white rounded-[24px] p-5 shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-slate-100 hover:border-slate-200 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300">
+                  <div key={station.id} className="bg-white rounded-[24px] p-5 shadow-[0_2px_10px_rgb(0,0,0,0.02)] border border-slate-100 hover:border-slate-200 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 active:scale-[0.98]">
                     <div className="flex justify-between items-start mb-1">
                       <div>
                         <h4 className="font-extrabold text-[16px] text-slate-900 tracking-tight leading-tight pr-4">{station.name}</h4>
@@ -602,7 +605,7 @@ export default function Home() {
                           href={`https://www.google.com/maps/search/?api=1&query=${station.lat},${station.lng}${station.google_place_id ? `&query_place_id=${station.google_place_id}` : ''}`}
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="flex items-center justify-center gap-2 w-full bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200 hover:border-blue-600 py-2 rounded-xl text-[12px] font-bold transition-colors duration-300"
+                          className="flex items-center justify-center gap-2 w-full bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200 hover:border-blue-600 py-2 rounded-xl text-[12px] font-bold transition-colors duration-300 active:scale-[0.98]"
                         >
                           <Navigation className="h-3.5 w-3.5" />
                           Get Directions
@@ -657,14 +660,14 @@ export default function Home() {
                             <button 
                               onClick={(e) => { e.stopPropagation(); submitReport(station.id, fuel.key, "Available"); }}
                               disabled={submittingKey !== null}
-                              className={`flex-1 transition-all duration-300 py-1.5 rounded-md text-[9px] uppercase tracking-wider font-bold ${submittingKey === `${station.id}-${fuel.key}-Available` ? 'bg-emerald-500 text-white cursor-wait relative' : 'bg-white border border-emerald-100 hover:bg-emerald-500 hover:border-emerald-500 hover:text-white text-emerald-700'}`}
+                              className={`flex-1 transition-all duration-300 py-1.5 rounded-md text-[9px] uppercase tracking-wider font-bold active:scale-[0.94] ${submittingKey === `${station.id}-${fuel.key}-Available` ? 'bg-emerald-500 text-white cursor-wait relative' : 'bg-white border border-emerald-100 hover:bg-emerald-500 hover:border-emerald-500 hover:text-white text-emerald-700'}`}
                             >
                               Avail
                             </button>
                             <button 
                               onClick={(e) => { e.stopPropagation(); submitReport(station.id, fuel.key, "Empty"); }}
                               disabled={submittingKey !== null}
-                              className={`flex-1 transition-all duration-300 py-1.5 rounded-md text-[9px] uppercase tracking-wider font-bold ${submittingKey === `${station.id}-${fuel.key}-Empty` ? 'bg-rose-500 text-white cursor-wait relative' : 'bg-white border border-rose-100 hover:bg-rose-500 hover:border-rose-500 hover:text-white text-rose-700'}`}
+                              className={`flex-1 transition-all duration-300 py-1.5 rounded-md text-[9px] uppercase tracking-wider font-bold active:scale-[0.94] ${submittingKey === `${station.id}-${fuel.key}-Empty` ? 'bg-rose-500 text-white cursor-wait relative' : 'bg-white border border-rose-100 hover:bg-rose-500 hover:border-rose-500 hover:text-white text-rose-700'}`}
                             >
                               Empty
                             </button>
@@ -679,7 +682,7 @@ export default function Home() {
               {/* New CTA to add a missing station */}
               <div 
                 onClick={() => setIsMissingDrawerOpen(true)}
-                className="border-2 border-dashed border-slate-200 rounded-[24px] p-5 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-colors mt-6"
+                className="border-2 border-dashed border-slate-200 rounded-[24px] p-5 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-colors mt-6 active:scale-[0.98]"
               >
                 <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
                   <MapPinPlus className="h-5 w-5 text-slate-500" />
@@ -732,6 +735,8 @@ export default function Home() {
               userLocation={userLocation} 
               leafletIcon={leafletIcon} 
               setSelectedFuel={setSelectedFuel} 
+              setSearchQuery={setSearchQuery}
+              setIsMobilePanelExpanded={setIsMobilePanelExpanded}
             />
 
             {/* Render User Location Marker if permission granted */}
