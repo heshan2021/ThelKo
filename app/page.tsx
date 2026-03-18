@@ -478,10 +478,10 @@ export default function Home() {
   };
 
   return (
-    <main className="h-screen w-full flex flex-col font-sans overflow-hidden bg-slate-50 text-slate-900">
+    <main className="h-[100dvh] w-full flex flex-col font-sans overflow-hidden bg-slate-50 text-slate-900">
       
       {/* Modern Floating Header over Map */}
-      <div className="absolute top-4 left-4 right-4 md:top-6 md:right-6 md:left-auto md:max-w-xs z-[2000] pointer-events-none flex flex-col items-end gap-3">
+      <div className="absolute top-[max(1rem,env(safe-area-inset-top))] left-4 right-4 md:top-6 md:right-6 md:left-auto md:max-w-xs z-[2000] pointer-events-none flex flex-col items-end gap-3">
          
          {/* Welcome FAB (Mobile Only) */}
          <div 
@@ -548,9 +548,9 @@ export default function Home() {
       <div className="flex-1 relative z-0">
         
         {/* Floating UI Panel (Modern Minimalist) */}
-        <div className="absolute top-auto bottom-0 left-0 right-0 md:top-6 md:left-6 md:bottom-auto md:w-[380px] max-h-[60vh] md:max-h-[calc(100vh-3rem)] flex flex-col gap-0 rounded-t-[32px] md:rounded-[32px] bg-white/80 backdrop-blur-2xl shadow-[0_-8px_40px_rgb(0,0,0,0.08)] md:shadow-[0_8px_40px_rgb(0,0,0,0.08)] border border-white overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] z-[1000]">
+        <div className="absolute top-auto bottom-0 left-0 right-0 md:top-6 md:left-6 md:bottom-auto md:w-[380px] max-h-[85vh] md:max-h-[calc(100vh-3rem)] flex flex-col gap-0 rounded-t-[32px] md:rounded-[32px] bg-white/80 backdrop-blur-2xl shadow-[0_-8px_40px_rgb(0,0,0,0.08)] md:shadow-[0_8px_40px_rgb(0,0,0,0.08)] border border-white overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] z-[1000]">
           
-          <div className="p-6 pb-4 relative z-10 shrink-0">
+          <div className="p-5 sm:p-6 pb-4 relative z-10 shrink-0">
             {/* Mobile Drag Handle & Toggle */}
             <div 
               className="md:hidden py-2 -mt-2 mb-5 cursor-pointer flex justify-center"
@@ -788,10 +788,10 @@ export default function Home() {
           onClick={() => setSelectedFuel(null)}
         >
           <div 
-            className="bg-white/95 backdrop-blur-xl w-full max-w-sm mx-auto rounded-3xl p-6 shadow-2xl border border-white flex flex-col gap-4 text-center animate-in slide-in-from-bottom-8 fade-in duration-300"
+            className="bg-white/95 backdrop-blur-xl w-full max-w-sm mx-auto rounded-3xl p-5 sm:p-6 shadow-2xl border border-white flex flex-col gap-4 text-center animate-in slide-in-from-bottom-8 fade-in duration-300 max-h-[85vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
-            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-2" />
+            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-2 shrink-0" />
             
             <div className="mb-2">
               <h3 className="text-xl font-extrabold text-slate-900 leading-tight mb-1">{selectedFuel.stationName}</h3>
@@ -832,10 +832,10 @@ export default function Home() {
           onClick={() => setIsMissingDrawerOpen(false)}
         >
           <div 
-            className="bg-white/95 backdrop-blur-xl w-full max-w-md mx-auto rounded-3xl p-6 shadow-2xl border border-white flex flex-col gap-4 animate-in slide-in-from-bottom-8 fade-in duration-300 relative"
+            className="bg-white/95 backdrop-blur-xl w-full max-w-md mx-auto rounded-3xl p-5 sm:p-6 shadow-2xl border border-white flex flex-col gap-4 animate-in slide-in-from-bottom-8 fade-in duration-300 relative max-h-[85vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
-            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-2 md:hidden" />
+            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-2 md:hidden shrink-0" />
             
             <div className="mb-2 text-center">
               <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -898,53 +898,53 @@ export default function Home() {
           onClick={() => setIsIntroModalOpen(false)}
         >
           <div 
-            className="bg-white/95 backdrop-blur-xl w-full max-w-md mx-auto rounded-[32px] p-8 shadow-2xl border border-white flex flex-col items-center text-center animate-in zoom-in-95 duration-300 relative"
+            className="bg-white/95 backdrop-blur-xl w-full max-w-md mx-auto rounded-[32px] p-6 sm:p-8 shadow-2xl border border-white flex flex-col items-center text-center animate-in zoom-in-95 duration-300 relative max-h-[85vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             <div 
                onClick={() => setIsIntroModalOpen(false)}
-               className="absolute top-4 right-4 p-2 hover:bg-slate-100 rounded-full cursor-pointer transition-colors"
+               className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 hover:bg-slate-100 rounded-full cursor-pointer transition-colors z-10"
             >
-               <X className="h-5 w-5 text-slate-400" />
+               <X className="h-4 w-4 sm:h-5 sm:w-5 text-slate-400" />
             </div>
 
-            <div className="w-16 h-16 bg-blue-100/50 rounded-full flex items-center justify-center mb-4">
-              <span className="text-3xl">⛽</span>
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100/50 rounded-full flex items-center justify-center mb-3 sm:mb-4 shrink-0">
+              <span className="text-2xl sm:text-3xl">⛽</span>
             </div>
             
-            <h2 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">How ThelKo Works</h2>
-            <p className="text-[14px] font-medium text-slate-600 mb-6 leading-relaxed">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 mb-2 tracking-tight">How ThelKo Works</h2>
+            <p className="text-[13px] sm:text-[14px] font-medium text-slate-600 mb-5 sm:mb-6 leading-relaxed">
               This is a <span className="text-slate-900 font-bold">100% community-driven</span> map. We rely on people like you to keep it accurate!
             </p>
             
-            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 w-full text-left space-y-4 mb-6">
-               <div className="flex gap-3 items-start">
-                  <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
-                     <span className="text-emerald-600 font-bold text-[10px]">1</span>
+            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3 sm:p-4 w-full text-left space-y-3 sm:space-y-4 mb-5 sm:mb-6 shrink-0">
+               <div className="flex gap-2 sm:gap-3 items-start">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5 sm:mt-0.5">
+                     <span className="text-emerald-600 font-bold text-[9px] sm:text-[10px]">1</span>
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-[13px] text-slate-900 leading-tight">Check the Map</h4>
-                    <p className="text-[12px] text-slate-500 font-medium leading-snug mt-0.5">Find stations with fuel confirmed by the community before you wait in line.</p>
+                    <h4 className="font-extrabold text-[12px] sm:text-[13px] text-slate-900 leading-tight">Check the Map</h4>
+                    <p className="text-[11px] sm:text-[12px] text-slate-500 font-medium leading-snug mt-1 sm:mt-0.5">Find stations with fuel confirmed by the community before you wait in line.</p>
                   </div>
                </div>
                
-               <div className="flex gap-3 items-start">
-                  <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
-                     <span className="text-blue-600 font-bold text-[10px]">2</span>
+               <div className="flex gap-2 sm:gap-3 items-start">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5 sm:mt-0.5">
+                     <span className="text-blue-600 font-bold text-[9px] sm:text-[10px]">2</span>
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-[13px] text-slate-900 leading-tight">Go Fuel Up</h4>
-                    <p className="text-[12px] text-slate-500 font-medium leading-snug mt-0.5">Head to your nearest active station to grab your quota safely.</p>
+                    <h4 className="font-extrabold text-[12px] sm:text-[13px] text-slate-900 leading-tight">Go Fuel Up</h4>
+                    <p className="text-[11px] sm:text-[12px] text-slate-500 font-medium leading-snug mt-1 sm:mt-0.5">Head to your nearest active station to grab your quota safely.</p>
                   </div>
                </div>
                
-               <div className="flex gap-3 items-start">
-                  <div className="w-6 h-6 rounded-full bg-rose-100 flex items-center justify-center shrink-0 mt-0.5">
-                     <span className="text-rose-600 font-bold text-[10px]">3</span>
+               <div className="flex gap-2 sm:gap-3 items-start">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-rose-100 flex items-center justify-center shrink-0 mt-0.5 sm:mt-0.5">
+                     <span className="text-rose-600 font-bold text-[9px] sm:text-[10px]">3</span>
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-[13px] text-slate-900 leading-tight">Tap & Update!</h4>
-                    <p className="text-[12px] text-slate-500 font-medium leading-snug tracking-wide mt-0.5">
+                    <h4 className="font-extrabold text-[12px] sm:text-[13px] text-slate-900 leading-tight">Tap & Update!</h4>
+                    <p className="text-[11px] sm:text-[12px] text-slate-500 font-medium leading-snug tracking-wide mt-1 sm:mt-0.5">
                       Help the next person by dropping a <span className="text-emerald-600 font-bold">Mark Available</span> or <span className="text-rose-600 font-bold">Mark Empty</span> explicitly while you are there.
                     </p>
                   </div>
@@ -953,7 +953,7 @@ export default function Home() {
 
             <button 
               onClick={() => setIsIntroModalOpen(false)}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl text-[15px] font-black uppercase tracking-wider transition-all shadow-lg shadow-blue-600/20 active:scale-[0.98]"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 sm:py-4 rounded-xl text-[13px] sm:text-[15px] font-black uppercase tracking-wider transition-all shadow-lg shadow-blue-600/20 active:scale-[0.98] shrink-0"
             >
               I Understand, Let's Go!
             </button>
