@@ -275,6 +275,7 @@ export default function Home() {
   const [isSubmittingMissing, setIsSubmittingMissing] = useState(false);
   const [isWelcomeExpandedMobile, setIsWelcomeExpandedMobile] = useState(false);
   const [isMissingExpandedMobile, setIsMissingExpandedMobile] = useState(false);
+  const [isIntroModalOpen, setIsIntroModalOpen] = useState(true);
 
   // Initialize leaflet icon setup on client mount
   useEffect(() => {
@@ -886,6 +887,76 @@ export default function Home() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Welcome / How it Works Modal (Shows on Reload) */}
+      {isIntroModalOpen && (
+        <div 
+          className="fixed inset-0 z-[5000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+          onClick={() => setIsIntroModalOpen(false)}
+        >
+          <div 
+            className="bg-white/95 backdrop-blur-xl w-full max-w-md mx-auto rounded-[32px] p-8 shadow-2xl border border-white flex flex-col items-center text-center animate-in zoom-in-95 duration-300 relative"
+            onClick={e => e.stopPropagation()}
+          >
+            <div 
+               onClick={() => setIsIntroModalOpen(false)}
+               className="absolute top-4 right-4 p-2 hover:bg-slate-100 rounded-full cursor-pointer transition-colors"
+            >
+               <X className="h-5 w-5 text-slate-400" />
+            </div>
+
+            <div className="w-16 h-16 bg-blue-100/50 rounded-full flex items-center justify-center mb-4">
+              <span className="text-3xl">⛽</span>
+            </div>
+            
+            <h2 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">How ThelKo Works</h2>
+            <p className="text-[14px] font-medium text-slate-600 mb-6 leading-relaxed">
+              This is a <span className="text-slate-900 font-bold">100% community-driven</span> map. We rely on people like you to keep it accurate!
+            </p>
+            
+            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 w-full text-left space-y-4 mb-6">
+               <div className="flex gap-3 items-start">
+                  <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
+                     <span className="text-emerald-600 font-bold text-[10px]">1</span>
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-[13px] text-slate-900 leading-tight">Check the Map</h4>
+                    <p className="text-[12px] text-slate-500 font-medium leading-snug mt-0.5">Find stations with fuel confirmed by the community before you wait in line.</p>
+                  </div>
+               </div>
+               
+               <div className="flex gap-3 items-start">
+                  <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
+                     <span className="text-blue-600 font-bold text-[10px]">2</span>
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-[13px] text-slate-900 leading-tight">Go Fuel Up</h4>
+                    <p className="text-[12px] text-slate-500 font-medium leading-snug mt-0.5">Head to your nearest active station to grab your quota safely.</p>
+                  </div>
+               </div>
+               
+               <div className="flex gap-3 items-start">
+                  <div className="w-6 h-6 rounded-full bg-rose-100 flex items-center justify-center shrink-0 mt-0.5">
+                     <span className="text-rose-600 font-bold text-[10px]">3</span>
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-[13px] text-slate-900 leading-tight">Tap & Update!</h4>
+                    <p className="text-[12px] text-slate-500 font-medium leading-snug tracking-wide mt-0.5">
+                      Help the next person by dropping a <span className="text-emerald-600 font-bold">Mark Available</span> or <span className="text-rose-600 font-bold">Mark Empty</span> explicitly while you are there.
+                    </p>
+                  </div>
+               </div>
+            </div>
+
+            <button 
+              onClick={() => setIsIntroModalOpen(false)}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl text-[15px] font-black uppercase tracking-wider transition-all shadow-lg shadow-blue-600/20 active:scale-[0.98]"
+            >
+              I Understand, Let's Go!
+            </button>
           </div>
         </div>
       )}
