@@ -38,7 +38,7 @@ interface Station {
 
 const SRI_LANKA_CENTER = { lat: 7.8731, lng: 80.7718 };
 
-import { Search, Navigation, ChevronUp, ChevronDown, MapPinPlus, Loader2 } from "lucide-react";
+import { Search, Navigation, ChevronUp, ChevronDown, MapPinPlus, Loader2, HelpCircle, X } from "lucide-react";
 
 // Haversine distance formula to calculate distance between two coordinates in kilometers
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -273,6 +273,8 @@ export default function Home() {
   const [isMissingDrawerOpen, setIsMissingDrawerOpen] = useState(false);
   const [missingStationData, setMissingStationData] = useState({ name: "", mapsLink: "" });
   const [isSubmittingMissing, setIsSubmittingMissing] = useState(false);
+  const [isWelcomeExpandedMobile, setIsWelcomeExpandedMobile] = useState(false);
+  const [isMissingExpandedMobile, setIsMissingExpandedMobile] = useState(false);
 
   // Initialize leaflet icon setup on client mount
   useEffect(() => {
@@ -478,9 +480,27 @@ export default function Home() {
     <main className="h-screen w-full flex flex-col font-sans overflow-hidden bg-slate-50 text-slate-900">
       
       {/* Modern Floating Header over Map */}
-      <div className="absolute top-4 left-4 right-4 md:top-6 md:right-6 md:left-auto md:max-w-xs z-[2000] pointer-events-none flex flex-col gap-3">
-         <div className="bg-white/90 backdrop-blur-xl px-5 py-4 md:px-6 md:py-4 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-white/50 pointer-events-auto flex flex-col gap-2">
-            <h1 className="text-xl md:text-xl font-extrabold tracking-tight bg-gradient-to-br from-slate-900 to-slate-600 bg-clip-text text-transparent leading-none">
+      <div className="absolute top-4 left-4 right-4 md:top-6 md:right-6 md:left-auto md:max-w-xs z-[2000] pointer-events-none flex flex-col items-end gap-3">
+         
+         {/* Welcome FAB (Mobile Only) */}
+         <div 
+           onClick={() => setIsWelcomeExpandedMobile(true)}
+           className={`md:hidden ${isWelcomeExpandedMobile ? 'hidden' : 'flex'} w-12 h-12 bg-white/95 backdrop-blur-xl rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/50 pointer-events-auto items-center justify-center cursor-pointer hover:bg-slate-50 transition-all active:scale-[0.98] shrink-0`}
+         >
+           <HelpCircle className="h-6 w-6 text-slate-700" />
+         </div>
+
+         {/* Welcome Card (Desktop Always, Mobile when expanded) */}
+         <div className={`${isWelcomeExpandedMobile ? 'flex' : 'hidden'} md:flex bg-white/90 backdrop-blur-xl px-5 py-4 md:px-6 md:py-4 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-white/50 pointer-events-auto flex-col gap-2 relative w-full`}>
+            {/* Close Button (Mobile Only) */}
+            <div 
+               onClick={() => setIsWelcomeExpandedMobile(false)}
+               className="md:hidden absolute top-3 right-3 p-1.5 bg-slate-100/50 hover:bg-slate-200 rounded-full cursor-pointer transition-colors"
+            >
+               <X className="h-4 w-4 text-slate-500" />
+            </div>
+            
+            <h1 className="text-xl md:text-xl font-extrabold tracking-tight bg-gradient-to-br from-slate-900 to-slate-600 bg-clip-text text-transparent leading-none pr-6 md:pr-0">
               Welcome to Thel Ko! ⛽
             </h1>
             <p className="text-[12px] md:text-xs font-medium text-slate-600 leading-relaxed">
@@ -493,10 +513,27 @@ export default function Home() {
             </div>
          </div>
 
+         {/* Missing Shed FAB (Mobile Only) */}
+         <div 
+           onClick={() => setIsMissingExpandedMobile(true)}
+           className={`md:hidden ${isMissingExpandedMobile ? 'hidden' : 'flex'} w-12 h-12 bg-white/95 backdrop-blur-xl rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-white/50 pointer-events-auto items-center justify-center cursor-pointer hover:bg-blue-50 transition-all active:scale-[0.98] shrink-0 mt-1`}
+         >
+           <MapPinPlus className="h-6 w-6 text-blue-600" />
+         </div>
+
+         {/* Missing Shed Pill (Desktop Always, Mobile when expanded) */}
          <div 
            onClick={() => setIsMissingDrawerOpen(true)}
-           className="bg-white/95 backdrop-blur-xl px-3 py-2 md:px-4 md:py-3 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-white/50 pointer-events-auto flex items-center gap-2 md:gap-3 cursor-pointer hover:bg-blue-50 hover:border-blue-100 hover:shadow-[0_8px_20px_rgb(59,130,246,0.15)] transition-all duration-300 group active:scale-[0.98]"
+           className={`${isMissingExpandedMobile ? 'flex' : 'hidden'} md:flex bg-white/95 backdrop-blur-xl px-3 py-2 md:px-4 md:py-3 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-white/50 pointer-events-auto items-center gap-2 md:gap-3 cursor-pointer hover:bg-blue-50 hover:border-blue-100 hover:shadow-[0_8px_20px_rgb(59,130,246,0.15)] transition-all duration-300 group active:scale-[0.98] relative pr-10 md:pr-4 mx-auto md:mx-0 w-full`}
          >
+           {/* Close Button (Mobile Only) - Stop prop so it doesn't open drawer */}
+           <div 
+              onClick={(e) => { e.stopPropagation(); setIsMissingExpandedMobile(false); }}
+              className="md:hidden absolute top-1/2 -translate-y-1/2 right-2 p-1.5 hover:bg-blue-100 rounded-full cursor-pointer transition-colors"
+           >
+              <X className="h-4 w-4 text-blue-400" />
+           </div>
+
            <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-100/80 rounded-full flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
              <MapPinPlus className="h-4 w-4 md:h-5 md:w-5 text-blue-600" />
            </div>
