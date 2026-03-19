@@ -38,7 +38,7 @@ interface Station {
 
 const SRI_LANKA_CENTER = { lat: 7.8731, lng: 80.7718 };
 
-import { Search, Navigation, ChevronUp, ChevronDown, MapPinPlus, Loader2, HelpCircle, X } from "lucide-react";
+import { Search, Navigation, ChevronUp, ChevronDown, MapPinPlus, Loader2, HelpCircle, X, Edit2 } from "lucide-react";
 
 // Haversine distance formula to calculate distance between two coordinates in kilometers
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -684,6 +684,13 @@ export default function Home() {
                                {fuel.status === 'Not Sure' && <span className="text-orange-600 font-black text-[14px] leading-none">Not Sure</span>}
                                {fuel.status === 'Unknown' && <span className="text-slate-400 font-black text-[14px] leading-none">Unknown</span>}
                              </div>
+                          </div>
+                          
+                          {/* Mobile UI Affordance to Update Status */}
+                          <div className="md:hidden mt-2 pointer-events-auto">
+                             <button className="w-full bg-slate-500/5 hover:bg-slate-500/10 border border-slate-500/10 text-slate-600 py-1.5 rounded-lg text-[9px] font-extrabold uppercase tracking-widest flex items-center justify-center transition-all active:scale-[0.98]">
+                                Update Availability
+                             </button>
                           </div>
                           
                           <div className={`hidden md:flex gap-1.5 transition-opacity duration-300 mt-1 ${isUnknownOrDisputed ? 'opacity-100' : 'opacity-50 hover:opacity-100 focus-within:opacity-100'}`}>
