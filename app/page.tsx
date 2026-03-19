@@ -39,6 +39,8 @@ interface Station {
 const SRI_LANKA_CENTER = { lat: 7.8731, lng: 80.7718 };
 
 import { Search, Navigation, ChevronUp, ChevronDown, MapPinPlus, Loader2, HelpCircle, X, Edit2 } from "lucide-react";
+import LanguageModal from "@/components/LanguageModal";
+import { useLanguage } from "@/hooks/useLanguage";
 
 // Haversine distance formula to calculate distance between two coordinates in kilometers
 function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -94,7 +96,7 @@ function getStationOperatingStatus(hoursString?: string): { isOpen: boolean | nu
   }
 }
 
-function ClusterMap({ stations, getDisplayStatus, setSelectedFuel, setSearchQuery, setIsMobilePanelExpanded }: any) {
+function ClusterMap({ stations, getDisplayStatus, setSelectedFuel, setSearchQuery, setIsMobilePanelExpanded, t }: any) {
   const [bounds, setBounds] = useState<any>(null);
   const [zoom, setZoom] = useState(8);
   const map = useMap();
@@ -248,7 +250,7 @@ function ClusterMap({ stations, getDisplayStatus, setSelectedFuel, setSearchQuer
                     className="mt-3 flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-[13px] font-bold shadow-sm transition-colors"
                   >
                     <Navigation className="h-4 w-4" />
-                    Get Directions
+                    {t('getDirections')}
                   </a>
                 </div>
             </Popup>
@@ -260,6 +262,7 @@ function ClusterMap({ stations, getDisplayStatus, setSelectedFuel, setSearchQuer
 }
 
 export default function Home() {
+  const { t } = useLanguage();
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [stations, setStations] = useState<Station[]>([]);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -479,6 +482,7 @@ export default function Home() {
 
   return (
     <main className="h-[100dvh] w-full flex flex-col font-sans overflow-hidden bg-slate-50 text-slate-900">
+      <LanguageModal />
       
       {/* Modern Floating Header over Map */}
       <div className="absolute top-[max(1rem,env(safe-area-inset-top))] left-4 right-4 md:top-6 md:right-6 md:left-auto md:max-w-xs z-[2000] pointer-events-none flex flex-col items-end gap-3">
@@ -502,14 +506,14 @@ export default function Home() {
             </div>
             
             <h1 className="text-xl md:text-xl font-extrabold tracking-tight bg-gradient-to-br from-slate-900 to-slate-600 bg-clip-text text-transparent leading-none pr-6 md:pr-0">
-              Welcome to Thel Ko! ⛽
+              {t('welcomeTitle')}
             </h1>
             <p className="text-[12px] md:text-xs font-medium text-slate-600 leading-relaxed">
-              This community map helps everyone find fuel without wasting their quota.
+              {t('welcomeDesc')}
             </p>
             <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 mt-1">
               <p className="text-[11px] font-bold text-slate-500 leading-relaxed">
-                <span className="text-slate-900 font-extrabold">How to help:</span> Waiting in line or just pumped? Tap your station below to <span className="text-emerald-600">Mark Available</span> or <span className="text-rose-600">Mark Empty</span>.
+                <span className="text-slate-900 font-extrabold">{t('howToHelpBanner1')}</span>{t('howToHelpBanner2')}<span className="text-emerald-600">{t('markAvailable')}</span> or <span className="text-rose-600">{t('markEmpty')}</span>.
               </p>
             </div>
          </div>
@@ -539,7 +543,7 @@ export default function Home() {
              <MapPinPlus className="h-4 w-4 md:h-5 md:w-5 text-blue-600" />
            </div>
            <div>
-             <h4 className="font-extrabold text-[12px] md:text-[14px] text-slate-900 leading-tight">Shed is missing?</h4>
+             <h4 className="font-extrabold text-[12px] md:text-[14px] text-slate-900 leading-tight">{t('shedIsMissing')}</h4>
              <p className="text-[9px] md:text-[11px] font-bold text-slate-500 mt-0.5 md:mt-1 uppercase tracking-wider md:tracking-wide">Add it to the map</p>
            </div>
          </div>
@@ -568,7 +572,7 @@ export default function Home() {
               <input
                 type="text"
                 className="block w-full pl-12 pr-4 py-4 rounded-2xl leading-5 bg-slate-100/50 hover:bg-slate-100 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-[3px] focus:ring-slate-900/10 transition-all font-medium text-[15px] border border-transparent focus:border-slate-200"
-                placeholder="Search by station or city..."
+                placeholder={t('searchPlaceholder')}
                 value={searchQuery}
                 onFocus={() => setIsMobilePanelExpanded(true)}
                 onChange={(e) => {
@@ -592,11 +596,11 @@ export default function Home() {
             <div className="space-y-4 pb-4">
               {nearestStations.map((station) => {
                 const fuels = [
-                  { key: "92", label: "92 Octane", status: getDisplayStatus(station.status_92, station.last_updated) },
-                  { key: "95", label: "95 Octane", status: getDisplayStatus(station.status_95, station.last_updated) },
-                  { key: "auto_diesel", label: "Auto Diesel", status: getDisplayStatus(station.status_auto_diesel, station.last_updated) },
-                  { key: "super_diesel", label: "Super Diesel", status: getDisplayStatus(station.status_super_diesel, station.last_updated) },
-                  { key: "kerosene", label: "Kerosene", status: getDisplayStatus(station.status_kerosene, station.last_updated) },
+                  { key: "status_92", label: t("octane92"), status: getDisplayStatus(station.status_92, station.last_updated) },
+                  { key: "status_95", label: t("octane95"), status: getDisplayStatus(station.status_95, station.last_updated) },
+                  { key: "status_auto_diesel", label: t("autoDiesel"), status: getDisplayStatus(station.status_auto_diesel, station.last_updated) },
+                  { key: "status_super_diesel", label: t("superDiesel"), status: getDisplayStatus(station.status_super_diesel, station.last_updated) },
+                  { key: "status_kerosene", label: t("kerosene"), status: getDisplayStatus(station.status_kerosene, station.last_updated) },
                 ];
                 
                 const opStatus = getStationOperatingStatus(station.official_hours);
@@ -638,7 +642,7 @@ export default function Home() {
                           className="flex items-center justify-center gap-2 w-full bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white border border-blue-200 hover:border-blue-600 py-2 rounded-xl text-[12px] font-bold transition-colors duration-300 active:scale-[0.98]"
                         >
                           <Navigation className="h-3.5 w-3.5" />
-                          Get Directions
+                          {t('getDirections')}
                         </a>
                     </div>
                     
@@ -678,18 +682,18 @@ export default function Home() {
                           <div className="flex flex-col gap-1.5 mb-2 pointer-events-none md:pointer-events-auto">
                              <span className={`text-[11px] font-bold uppercase tracking-wider ${textColor}`}>{fuel.label}</span> 
                              <div className="flex items-center">
-                               {(fuel.status === 'Available' || fuel.status === 'Confirmed Available') && <span className="text-emerald-600 font-black text-[14px] leading-none">Confirmed</span>}
-                               {fuel.status === 'Likely Available' && <span className="text-emerald-500 font-black text-[14px] leading-none">Likely Available</span>}
-                               {fuel.status === 'Empty' && <span className="text-rose-600 font-black text-[14px] leading-none">Empty</span>}
-                               {fuel.status === 'Not Sure' && <span className="text-orange-600 font-black text-[14px] leading-none">Not Sure</span>}
-                               {fuel.status === 'Unknown' && <span className="text-slate-400 font-black text-[14px] leading-none">Unknown</span>}
+                               {(fuel.status === 'Available' || fuel.status === 'Confirmed Available') && <span className="text-emerald-600 font-black text-[14px] leading-none">{t('confirmed')}</span>}
+                               {fuel.status === 'Likely Available' && <span className="text-emerald-500 font-black text-[14px] leading-none">{t('likelyAvailable')}</span>}
+                               {fuel.status === 'Empty' && <span className="text-rose-600 font-black text-[14px] leading-none">{t('empty')}</span>}
+                               {fuel.status === 'Not Sure' && <span className="text-orange-600 font-black text-[14px] leading-none">{t('notSure')}</span>}
+                               {fuel.status === 'Unknown' && <span className="text-slate-400 font-black text-[14px] leading-none">{t('unknown')}</span>}
                              </div>
                           </div>
                           
                           {/* Mobile UI Affordance to Update Status */}
                           <div className="md:hidden mt-2 pointer-events-auto">
                              <button className="w-full bg-slate-500/5 hover:bg-slate-500/10 border border-slate-500/10 text-slate-600 py-1.5 rounded-lg text-[9px] font-extrabold uppercase tracking-widest flex items-center justify-center transition-all active:scale-[0.98]">
-                                Update Availability
+                                {t('updateAvailability')}
                              </button>
                           </div>
                           
@@ -699,14 +703,14 @@ export default function Home() {
                               disabled={submittingKey !== null}
                               className={`flex-1 transition-all duration-300 py-1.5 rounded-md text-[9px] uppercase tracking-wider font-bold active:scale-[0.94] ${submittingKey === `${station.id}-${fuel.key}-Available` ? 'bg-emerald-500 text-white cursor-wait relative' : 'bg-white border border-emerald-100 hover:bg-emerald-500 hover:border-emerald-500 hover:text-white text-emerald-700'}`}
                             >
-                              Avail
+                              {t('available')}
                             </button>
                             <button 
                               onClick={(e) => { e.stopPropagation(); submitReport(station.id, fuel.key, "Empty"); }}
                               disabled={submittingKey !== null}
                               className={`flex-1 transition-all duration-300 py-1.5 rounded-md text-[9px] uppercase tracking-wider font-bold active:scale-[0.94] ${submittingKey === `${station.id}-${fuel.key}-Empty` ? 'bg-rose-500 text-white cursor-wait relative' : 'bg-white border border-rose-100 hover:bg-rose-500 hover:border-rose-500 hover:text-white text-rose-700'}`}
                             >
-                              Empty
+                              {t('empty')}
                             </button>
                           </div>
                         </div>
@@ -724,8 +728,8 @@ export default function Home() {
                 <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
                   <MapPinPlus className="h-5 w-5 text-slate-500" />
                 </div>
-                <h4 className="font-extrabold text-[15px] text-slate-900 mb-1">Shed is missing?</h4>
-                <p className="text-[12px] text-slate-500 font-medium">Help the community by adding it to the map!</p>
+                <h4 className="font-extrabold text-[15px] text-slate-900 mb-1">{t('shedIsMissing')}</h4>
+                <p className="text-[12px] text-slate-500 font-medium">{t('helpCommunityAdd')}</p>
               </div>
             </div>
             
@@ -734,8 +738,8 @@ export default function Home() {
                 <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
                   <Search className="h-5 w-5 text-slate-400" />
                 </div>
-                <h3 className="text-[15px] font-bold text-slate-900 mb-1">No stations found</h3>
-                <p className="text-[13px] text-slate-500 font-medium">Try adjusting your search terms.</p>
+                <h3 className="text-[15px] font-bold text-slate-900 mb-1">{t('noStationsFound')}</h3>
+                <p className="text-[13px] text-slate-500 font-medium">{t('adjustSearchTerms')}</p>
               </div>
             )}
           </div>
@@ -774,6 +778,7 @@ export default function Home() {
               setSelectedFuel={setSelectedFuel} 
               setSearchQuery={setSearchQuery}
               setIsMobilePanelExpanded={setIsMobilePanelExpanded}
+              t={t}
             />
 
             {/* Render User Location Marker if permission granted */}
@@ -811,14 +816,14 @@ export default function Home() {
                 disabled={submittingKey !== null}
                 className="w-full bg-emerald-50 border border-emerald-100 hover:bg-emerald-500 hover:border-emerald-500 text-emerald-700 hover:text-white py-4 rounded-2xl text-[14px] font-black uppercase tracking-wider transition-all"
               >
-                {submittingKey === `${selectedFuel.stationId}-${selectedFuel.fuelKey}-Available` ? 'Sending...' : 'Mark Available'}
+                {submittingKey === `${selectedFuel.stationId}-${selectedFuel.fuelKey}-Available` ? t('sending') : t('markAvailable')}
               </button>
               <button 
                 onClick={() => { submitReport(selectedFuel.stationId, selectedFuel.fuelKey, "Empty"); setSelectedFuel(null); }}
                 disabled={submittingKey !== null}
                 className="w-full bg-rose-50 border border-rose-100 hover:bg-rose-500 hover:border-rose-500 text-rose-700 hover:text-white py-4 rounded-2xl text-[14px] font-black uppercase tracking-wider transition-all"
               >
-                {submittingKey === `${selectedFuel.stationId}-${selectedFuel.fuelKey}-Empty` ? 'Sending...' : 'Mark Empty'}
+                {submittingKey === `${selectedFuel.stationId}-${selectedFuel.fuelKey}-Empty` ? t('sending') : t('markEmpty')}
               </button>
             </div>
             
@@ -826,7 +831,7 @@ export default function Home() {
               onClick={() => setSelectedFuel(null)}
               className="mt-2 text-sm font-bold text-slate-400 p-2 uppercase tracking-wide hover:text-slate-600 transition-colors"
             >
-              Cancel
+              {t('cancel')}
             </button>
           </div>
         </div>
@@ -848,13 +853,13 @@ export default function Home() {
               <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <MapPinPlus className="h-6 w-6 text-blue-600" />
               </div>
-              <h3 className="text-xl font-extrabold text-slate-900 leading-tight mb-1">Add a New Station</h3>
-              <p className="text-sm font-medium text-slate-500">Know a fuel station that isn't on the map? Send it to us for review.</p>
+              <h3 className="text-xl font-extrabold text-slate-900 leading-tight mb-1">{t('addNewStationTitle')}</h3>
+              <p className="text-sm font-medium text-slate-500">{t('addStationPrompt')}</p>
             </div>
             
             <form onSubmit={handleMissingSubmission} className="flex flex-col gap-4 mt-2">
               <div>
-                <label className="block text-[11px] font-black uppercase text-slate-500 tracking-widest mb-1.5 ml-1">Station Name</label>
+                <label className="block text-[11px] font-black uppercase text-slate-500 tracking-widest mb-1.5 ml-1">{t('stationName')}</label>
                 <input 
                   type="text" 
                   required
@@ -866,7 +871,7 @@ export default function Home() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-black uppercase text-slate-500 tracking-widest mb-1.5 ml-1">Google Maps Link</label>
+                <label className="block text-[11px] font-black uppercase text-slate-500 tracking-widest mb-1.5 ml-1">{t('googleMapsLink')}</label>
                 <input 
                   type="url" 
                   required
@@ -883,14 +888,14 @@ export default function Home() {
                   onClick={() => setIsMissingDrawerOpen(false)}
                   className="flex-1 py-3 text-sm font-bold text-slate-500 uppercase tracking-wide hover:bg-slate-100 rounded-xl transition-colors"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button 
                   type="submit"
                   disabled={isSubmittingMissing || !missingStationData.name || !missingStationData.mapsLink}
                   className="flex-[2] bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white py-3 rounded-xl text-[14px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20"
                 >
-                  {isSubmittingMissing ? <Loader2 className="w-5 h-5 animate-spin" /> : "Submit Station"}
+                  {isSubmittingMissing ? <Loader2 className="w-5 h-5 animate-spin" /> : t('submitStation')}
                 </button>
               </div>
             </form>
@@ -919,9 +924,9 @@ export default function Home() {
               <span className="text-2xl sm:text-3xl">⛽</span>
             </div>
             
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 mb-2 tracking-tight">How ThelKo Works</h2>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 mb-2 tracking-tight">{t('howItWorks')}</h2>
             <p className="text-[13px] sm:text-[14px] font-medium text-slate-600 mb-5 sm:mb-6 leading-relaxed">
-              This is a <span className="text-slate-900 font-bold">100% community-driven</span> map. We rely on people like you to keep it accurate!
+              {t('howToHelpContent1')}<span className="text-slate-900 font-bold">{t('howToHelpContent2')}</span>{t('howToHelpContent3')}
             </p>
             
             <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3 sm:p-4 w-full text-left space-y-3 sm:space-y-4 mb-5 sm:mb-6 shrink-0">
@@ -930,8 +935,8 @@ export default function Home() {
                      <span className="text-emerald-600 font-bold text-[9px] sm:text-[10px]">1</span>
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-[12px] sm:text-[13px] text-slate-900 leading-tight">Check the Map</h4>
-                    <p className="text-[11px] sm:text-[12px] text-slate-500 font-medium leading-snug mt-1 sm:mt-0.5">Find stations with fuel confirmed by the community before you wait in line.</p>
+                    <h4 className="font-extrabold text-[12px] sm:text-[13px] text-slate-900 leading-tight">{t('step1Title')}</h4>
+                    <p className="text-[11px] sm:text-[12px] text-slate-500 font-medium leading-snug mt-1 sm:mt-0.5">{t('step1Desc')}</p>
                   </div>
                </div>
                
@@ -940,8 +945,8 @@ export default function Home() {
                      <span className="text-blue-600 font-bold text-[9px] sm:text-[10px]">2</span>
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-[12px] sm:text-[13px] text-slate-900 leading-tight">Go Fuel Up</h4>
-                    <p className="text-[11px] sm:text-[12px] text-slate-500 font-medium leading-snug mt-1 sm:mt-0.5">Head to your nearest active station to grab your quota safely.</p>
+                    <h4 className="font-extrabold text-[12px] sm:text-[13px] text-slate-900 leading-tight">{t('step2Title')}</h4>
+                    <p className="text-[11px] sm:text-[12px] text-slate-500 font-medium leading-snug mt-1 sm:mt-0.5">{t('step2Desc')}</p>
                   </div>
                </div>
                
@@ -950,9 +955,9 @@ export default function Home() {
                      <span className="text-rose-600 font-bold text-[9px] sm:text-[10px]">3</span>
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-[12px] sm:text-[13px] text-slate-900 leading-tight">Tap & Update!</h4>
+                    <h4 className="font-extrabold text-[12px] sm:text-[13px] text-slate-900 leading-tight">{t('step3Title')}</h4>
                     <p className="text-[11px] sm:text-[12px] text-slate-500 font-medium leading-snug tracking-wide mt-1 sm:mt-0.5">
-                      Help the next person by dropping a <span className="text-emerald-600 font-bold">Mark Available</span> or <span className="text-rose-600 font-bold">Mark Empty</span> explicitly while you are there.
+                      {t('step3Desc1')}<span className="text-emerald-600 font-bold">{t('step3Desc2')}</span>{t('step3Desc3')}<span className="text-rose-600 font-bold">{t('step3Desc4')}</span>{t('step3Desc5')}
                     </p>
                   </div>
                </div>
@@ -962,7 +967,7 @@ export default function Home() {
               onClick={() => setIsIntroModalOpen(false)}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 sm:py-4 rounded-xl text-[13px] sm:text-[15px] font-black uppercase tracking-wider transition-all shadow-lg shadow-blue-600/20 active:scale-[0.98] shrink-0"
             >
-              I Understand, Let's Go!
+              {t('understandLetsGo')}
             </button>
           </div>
         </div>
