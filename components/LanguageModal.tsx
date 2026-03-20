@@ -1,11 +1,14 @@
 "use client";
 
-import { useLanguage } from '../hooks/useLanguage';
+import { Language } from '../utils/translations';
 import { Globe2 } from 'lucide-react';
 
-export default function LanguageModal() {
-  const { language, setLanguage } = useLanguage();
+interface LanguageModalProps {
+  language: Language | null;
+  setLanguage: (lang: Language) => void;
+}
 
+export default function LanguageModal({ language, setLanguage }: LanguageModalProps) {
   if (language !== null) return null;
 
   return (

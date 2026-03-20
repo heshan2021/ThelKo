@@ -262,7 +262,7 @@ function ClusterMap({ stations, getDisplayStatus, setSelectedFuel, setSearchQuer
 }
 
 export default function Home() {
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [stations, setStations] = useState<Station[]>([]);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -312,10 +312,15 @@ export default function Home() {
   // Initialize Device ID & Location
   useEffect(() => {
     let id = localStorage.getItem("device_id");
-    if (!id) {
+    
+    // Strict UUIDv4 sanity check to prevent legacy strings from crashing Postgres RPC
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    
+    if (!id || !uuidRegex.test(id)) {
       id = uuidv4();
       localStorage.setItem("device_id", id);
     }
+    
     setDeviceId(id);
 
     if (navigator.geolocation) {
@@ -421,8 +426,8 @@ export default function Home() {
     setSubmittingKey(null);
 
     if (error) {
-      console.error(error);
-      alert("Failed to submit report. Please try again.");
+      console.error("DEBUG SUBMIT ERROR:", error);
+      alert(`Failed to submit report: ${error.message || JSON.stringify(error)}`);
     } else {
       // Record successful vote in local storage to prevent immediate spam
       localStorage.setItem(cooldownKey, Date.now().toString());
@@ -482,7 +487,7 @@ export default function Home() {
 
   return (
     <main className="h-[100dvh] w-full flex flex-col font-sans overflow-hidden bg-slate-50 text-slate-900">
-      <LanguageModal />
+      <LanguageModal language={language} setLanguage={setLanguage} />
       
       {/* Modern Floating Header over Map */}
       <div className="absolute top-[max(1rem,env(safe-area-inset-top))] left-4 right-4 md:top-6 md:right-6 md:left-auto md:max-w-xs z-[2000] pointer-events-none flex flex-col items-end gap-3">
@@ -596,11 +601,11 @@ export default function Home() {
             <div className="space-y-4 pb-4">
               {nearestStations.map((station) => {
                 const fuels = [
-                  { key: "status_92", label: t("octane92"), status: getDisplayStatus(station.status_92, station.last_updated) },
-                  { key: "status_95", label: t("octane95"), status: getDisplayStatus(station.status_95, station.last_updated) },
-                  { key: "status_auto_diesel", label: t("autoDiesel"), status: getDisplayStatus(station.status_auto_diesel, station.last_updated) },
-                  { key: "status_super_diesel", label: t("superDiesel"), status: getDisplayStatus(station.status_super_diesel, station.last_updated) },
-                  { key: "status_kerosene", label: t("kerosene"), status: getDisplayStatus(station.status_kerosene, station.last_updated) },
+                  { key: "92", label: t("octane92"), status: getDisplayStatus(station.status_92, station.last_updated) },
+                  { key: "95", label: t("octane95"), status: getDisplayStatus(station.status_95, station.last_updated) },
+                  { key: "auto_diesel", label: t("autoDiesel"), status: getDisplayStatus(station.status_auto_diesel, station.last_updated) },
+                  { key: "super_diesel", label: t("superDiesel"), status: getDisplayStatus(station.status_super_diesel, station.last_updated) },
+                  { key: "kerosene", label: t("kerosene"), status: getDisplayStatus(station.status_kerosene, station.last_updated) },
                 ];
                 
                 const opStatus = getStationOperatingStatus(station.official_hours);
@@ -682,7 +687,7 @@ export default function Home() {
                           <div className="flex flex-col gap-1.5 mb-2 pointer-events-none md:pointer-events-auto">
                              <span className={`text-[11px] font-bold uppercase tracking-wider ${textColor}`}>{fuel.label}</span> 
                              <div className="flex items-center">
-                               {(fuel.status === 'Available' || fuel.status === 'Confirmed Available') && <span className="text-emerald-600 font-black text-[14px] leading-none">{t('confirmed')}</span>}
+                               {(fuel.status === 'Available' || fuel.status === 'Confirmed Available') && <span className="text-emerald-600 font-black text-[14px] leading-none">{t('available')}</span>}
                                {fuel.status === 'Likely Available' && <span className="text-emerald-500 font-black text-[14px] leading-none">{t('likelyAvailable')}</span>}
                                {fuel.status === 'Empty' && <span className="text-rose-600 font-black text-[14px] leading-none">{t('empty')}</span>}
                                {fuel.status === 'Not Sure' && <span className="text-orange-600 font-black text-[14px] leading-none">{t('notSure')}</span>}
