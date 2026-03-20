@@ -57,13 +57,43 @@ function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon
 // Operating Hours parsing logic
 function getStationOperatingStatus(hoursString?: string): { isOpen: boolean | null; text: string } {
   if (!hoursString || hoursString === "Unknown") return { isOpen: null, text: "Hours Unknown" };
-  if (hoursString.toLowerCase() === "24 hours") return { isOpen: true, text: "OPEN NOW (24 Hours)" };
+  
+  if (hoursString.toLowerCase().includes("24 hours") && !hoursString.includes("|")) {
+      return { isOpen: true, text: "OPEN NOW (24 Hours)" };
+  }
 
-  // Matches "06:00 AM - 10:00 PM"
-  const match = hoursString.match(/(\d{1,2}):(\d{2})\s*(AM|PM)\s*-\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-  if (!match) return { isOpen: null, text: "Hours Unknown" };
+  // Get current time in Sri Lanka (+05:30)
+  const now = new Date();
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  const slTime = new Date(utc + (3600000 * 5.5));
+  
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const currentDayName = days[slTime.getDay()];
+  
+  // Try to find today's string
+  // Format from DB: "Monday: 6:00 AM - 11:00 PM | Tuesday: ..."
+  let todayStr = hoursString;
+  if (hoursString.includes("|")) {
+      const parts = hoursString.split("|").map(p => p.trim());
+      const todayPart = parts.find(p => p.toLowerCase().startsWith(currentDayName.toLowerCase()));
+      if (todayPart) {
+          todayStr = todayPart.substring(currentDayName.length + 1).trim(); // Remove "Monday: "
+      }
+  }
 
-  let [ , startH, startM, startP, endH, endM, endP ] = match;
+  if (todayStr.toLowerCase() === "closed") {
+      return { isOpen: false, text: "CLOSED TODAY" };
+  }
+  
+  if (todayStr.toLowerCase().includes("open 24 hours")) {
+      return { isOpen: true, text: "OPEN NOW (24 Hours)" };
+  }
+
+  // Matches "06:00 AM - 10:00 PM" and "6:00 AM – 11:00 PM"
+  const match = todayStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)\s*[-–—]\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (!match) return { isOpen: null, text: "Hours Unknown" + (todayStr !== "Unknown" ? ` (${todayStr})` : "") };
+
+  const [ , startH, startM, startP, endH, endM, endP ] = match;
   
   const parseTime = (h: string, m: string, p: string) => {
     let hour = parseInt(h, 10);
@@ -75,10 +105,6 @@ function getStationOperatingStatus(hoursString?: string): { isOpen: boolean | nu
   const startTimeMs = parseTime(startH, startM, startP);
   const endTimeMs = parseTime(endH, endM, endP);
 
-  // Get current time in Sri Lanka (+05:30)
-  const now = new Date();
-  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-  const slTime = new Date(utc + (3600000 * 5.5));
   const currentTimeMs = slTime.getHours() * 60 + slTime.getMinutes();
 
   let isOpen = false;
@@ -90,9 +116,9 @@ function getStationOperatingStatus(hoursString?: string): { isOpen: boolean | nu
   }
 
   if (isOpen) {
-    return { isOpen: true, text: `OPEN NOW (Until ${endH} ${endP.toUpperCase()})` };
+    return { isOpen: true, text: `OPEN NOW (Until ${endH}:${endM} ${endP.toUpperCase()})` };
   } else {
-    return { isOpen: false, text: `CLOSED (Opens at ${startH} ${startP.toUpperCase()})` };
+    return { isOpen: false, text: `CLOSED (Opens at ${startH}:${startM} ${startP.toUpperCase()})` };
   }
 }
 
